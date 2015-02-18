@@ -93,6 +93,8 @@ def get_conf(argv=sys.argv):
                         'for the install-server. This public network will by '
                         'attached to eth1 interface and IP address is '
                         'associated using the DHCP.')
+    parser.add_argument('--image_mirror', default='bob', type=str,
+                        help='location of the QCOW2 image')
 
     conf = parser.parse_args(argv)
     return conf
@@ -380,11 +382,19 @@ local-hostname: {{ hostname }}
             self.initialize_disk(disk)
             self.register_disk(disk)
         if 'image' in definition['disks'][0]:
+            self.retrieve_image_from_mirror(
+                definition['disks'][0]['image'])
             cloud_init_image = self.create_cloud_init_image()
             self.register_disk(cloud_init_image)
 
         self.meta['nics'][0]['boot_order'] = 2
         self.meta['disks'][0]['boot_order'] = 1
+
+    def retrieve_image_from_mirror(self, image):
+        self.hypervisor.call(
+            'wget', '--continue', '--no-verbose', '-O',
+            Host.host_libvirt_image_dir + '/' + image,
+            self.conf.image_mirror + '/' + image)
 
     def create_cloud_init_image(self):
 
