@@ -139,6 +139,10 @@ deploy() {
     installserverip=$(ssh $SSHOPTS root@$virthost "awk '/ ${mac} / {print \$3}' /var/lib/libvirt/dnsmasq/nat.leases"|head -n 1)
 
     local retry=0
+    for user_name in root jenkins; do
+        chmod 755 ${ctdir}/top/${user_name} ${ctdir}/top/${user_name}/.ssh || true
+        chmod 600 ${ctdir}/top/${user_name}/.ssh/id_rsa || true
+    done
     while ! rsync -e "ssh $SSHOPTS" --quiet -av --no-owner ${ctdir}/top/ root@$installserverip:/; do
         if [ $((retry++)) -gt 300 ]; then
             echo "reached max retries"
