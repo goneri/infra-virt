@@ -84,13 +84,6 @@ LOG_DIR=${LOG_DIR:-"$(pwd)/logs"}
 
 SSHOPTS="-oBatchMode=yes -oCheckHostIP=no -oHashKnownHosts=no  -oStrictHostKeyChecking=no -oPreferredAuthentications=publickey  -oChallengeResponseAuthentication=no -oKbdInteractiveDevices=no -oUserKnownHostsFile=/dev/null -oControlPath=~/.ssh/control-%r@%h:%p -oControlMaster=auto -oControlPersist=30"
 
-if [ -n "$SSH_AUTH_SOCK" ]; then
-    ssh-add -L > pubfile
-    pubfile=pubfile
-else
-    pubfile=~/.ssh/id_rsa.pub
-fi
-
 upload_logs() {
     [ -f ~/openrc ] || return
 
@@ -124,6 +117,13 @@ deploy() {
     local ctdir=$1
     local do_upgrade=$2
 
+    virtualizor_extra_args="--pub-key-file ${HOME}/.ssh/id_rsa.pub"
+
+    if [ -n "$SSH_AUTH_SOCK" ]; then
+        ssh-add -L > pubfile
+        virtualizor_extra_args+=" --pub-key-file pubfile"
+    fi
+
     if [ ${do_upgrade} = 1 ]; then
         # On upgrade, we redeploy the install-server and the router.
         drop_host ${PREFIX}_${installserver_name}
@@ -134,7 +134,7 @@ deploy() {
         jenkins_job_name="puppet"
     fi
 
-    $ORIG/virtualizor.py "$workdir/$platform" $virthost --prefix ${PREFIX} --public_network nat --pub-key-file $pubfile ${virtualizor_extra_args}
+    $ORIG/virtualizor.py "$workdir/$platform" $virthost --prefix ${PREFIX} --public_network nat $pubfile ${virtualizor_extra_args}
     local mac=$(ssh $SSHOPTS root@$virthost cat /etc/libvirt/qemu/${PREFIX}_${installserver_name}.xml|xmllint --xpath 'string(/domain/devices/interface[last()]/mac/@address)' -)
     installserverip=$(ssh $SSHOPTS root@$virthost "awk '/ ${mac} / {print \$3}' /var/lib/libvirt/dnsmasq/nat.leases"|head -n 1)
 
