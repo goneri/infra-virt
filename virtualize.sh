@@ -130,7 +130,7 @@ deploy() {
         drop_host ${PREFIX}_router
         jenkins_job_name="upgrade"
     else
-#        virtualizor_extra_args="--replace"
+        virtualizor_extra_args="--replace"
         jenkins_job_name="puppet"
     fi
 
