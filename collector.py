@@ -61,6 +61,8 @@ def _get_router_nic(config_path):
                         "name": "eth0",
                         "netmask": host["netmask"],
                         "network": str(net)}
+    print("Error: Cannot find a gateway in the .cmdb files.")
+    sys.exit(1)
 
 
 def _get_checksum(images_url, sps_version, img):
